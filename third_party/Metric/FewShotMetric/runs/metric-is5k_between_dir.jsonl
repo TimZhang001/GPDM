@@ -1,0 +1,4 @@
+{"results": {"is5k_mean": NaN, "is5k_std": NaN}, "metric": "is5k_between_dir", "total_time": 8.810009241104126, "total_time_str": "9s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698981183.2805896}
+{"results": {"is5k_mean": NaN, "is5k_std": NaN}, "metric": "is5k_between_dir", "total_time": 0.03615307807922363, "total_time_str": "0s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698990503.3275473}
+{"results": {"is5k_mean": NaN, "is5k_std": NaN}, "metric": "is5k_between_dir", "total_time": 0.0385892391204834, "total_time_str": "0s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698990627.4773579}
+{"results": {"is5k_mean": NaN, "is5k_std": NaN}, "metric": "is5k_between_dir", "total_time": 0.03775930404663086, "total_time_str": "0s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698991700.7130318}

@@ -1,4 +1,5 @@
 import os
+import glob
 from math import sqrt
 
 from PIL import Image
@@ -20,6 +21,7 @@ def get_transforms(center_crop, gray_scale):
 
 def load_image(path, make_square=False, gray_scale=False):
     img = Image.open(path).convert('RGB')
+    img = img.resize((256, 256), Image.BICUBIC)
     transforms = get_transforms(center_crop=min(img.size[:2]) if make_square else None, gray_scale=gray_scale)
     img = transforms(img).unsqueeze(0)
     return img
@@ -27,9 +29,15 @@ def load_image(path, make_square=False, gray_scale=False):
 
 def read_data(path, max_inputs, gray_scale):
     if os.path.isdir(path):
-        paths = [f'{path}/{x}' for x in os.listdir(path)]
+
+        # 使用glob获取目录下所有拖文件的路径
+        paths = glob.glob(os.path.join(path, '*.png'))
         if max_inputs is not None:
-            paths = paths[:max_inputs]
+            if max_inputs > 1:
+                paths = paths[:max_inputs]
+            else:
+                # 选择000.png
+                paths = [os.path.join(path, '000.png')]
         data = []
         for p in tqdm(paths):
             data.append(load_image(p, make_square=True, gray_scale=gray_scale))
@@ -40,10 +48,10 @@ def read_data(path, max_inputs, gray_scale):
     return refernce_images
 
 
-def dump_images(batch, out_dir):
+def dump_images(batch, out_dir, image_name="outputs.png"):
     os.makedirs(out_dir, exist_ok=True)
     nrow = int(sqrt(len(batch)))
-    save_image((batch + 1)/2, os.path.join(out_dir, "outputs.png"), nrow=nrow, normalize=False, pad_value=1, scale_each=True)
+    save_image((batch + 1)/2, os.path.join(out_dir, image_name), nrow=nrow, normalize=False, pad_value=1, scale_each=True)
 
 
 def to_np(img):
@@ -63,11 +71,18 @@ def show_nns(outputs, ref_images, out_dir, n=16):
     for i in range(n):
         dists = torch.mean((ref_images - outputs[i].unsqueeze(0))**2, dim=(1,2,3))
         j = dists.argmin().item()
-        axes[0, i].imshow(to_np(outputs[i]))
-        axes[0, i].axis('off')
-        axes[1, i].imshow(to_np(ref_images[j]))
-        axes[1, i].axis('off')
-        axes[1, i].set_title(f"NN L2: {(outputs[i] - ref_images[j]).pow(2).sum():.3f}")
+        if n==1:
+            axes[0].imshow(to_np(outputs[i]))
+            axes[0].axis('off')
+            axes[1].imshow(to_np(ref_images[j]))
+            axes[1].axis('off')
+            axes[1].set_title(f"NN L2: {(outputs[i] - ref_images[j]).pow(2).sum():.3f}")
+        else:
+            axes[0, i].imshow(to_np(outputs[i]))
+            axes[0, i].axis('off')
+            axes[1, i].imshow(to_np(ref_images[j]))
+            axes[1, i].axis('off')
+            axes[1, i].set_title(f"NN L2: {(outputs[i] - ref_images[j]).pow(2).sum():.3f}")
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f"NNs.png"))
         # nn_indices.append(j)

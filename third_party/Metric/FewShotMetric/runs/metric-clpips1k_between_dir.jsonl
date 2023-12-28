@@ -1,0 +1,1 @@
+{"results": {"clpips1k": 0.06148954122227292, "clpips1k_rz": 0.15511232656715299}, "metric": "clpips1k_between_dir", "total_time": 579.4395780563354, "total_time_str": "9m 39s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698992280.1531832}

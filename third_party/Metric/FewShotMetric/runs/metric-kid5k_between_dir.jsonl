@@ -1,0 +1,4 @@
+{"results": {"kid_between_dir": 0.022191711352209757}, "metric": "kid5k_between_dir", "total_time": 35.88899493217468, "total_time_str": "36s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698981174.4695563}
+{"results": {"kid_between_dir": 0.022242864490590066}, "metric": "kid5k_between_dir", "total_time": 1.6695115566253662, "total_time_str": "2s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698990503.29098}
+{"results": {"kid_between_dir": 0.022246970536326297}, "metric": "kid5k_between_dir", "total_time": 1.5875580310821533, "total_time_str": "2s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698990627.4383464}
+{"results": {"kid_between_dir": 0.022310738543251083}, "metric": "kid5k_between_dir", "total_time": 1.6889326572418213, "total_time_str": "2s", "num_gpus": 1, "snapshot_pkl": null, "timestamp": 1698991700.6748343}
