@@ -49,10 +49,10 @@ class DistModel(BaseModel):
         BaseModel.initialize(self, use_gpu=use_gpu, gpu_ids=gpu_ids)
 
         self.model = model
-        self.net = net
+        self.net   = net
         self.is_train = is_train
-        self.spatial = spatial
-        self.gpu_ids = gpu_ids
+        self.spatial  = spatial
+        self.gpu_ids  = gpu_ids
         self.model_name = '%s [%s]'%(model,net)
 
         if(self.model == 'net-lin'): # pretrained net + linear layer
@@ -66,7 +66,7 @@ class DistModel(BaseModel):
                 model_path = os.path.abspath(os.path.join(inspect.getfile(self.initialize), '..', 'weights/v%s/%s.pth'%(version,net)))
 
             if(not is_train):
-                print('Loading model from: %s'%model_path)
+                #print('Loading model from: %s'%model_path)
                 self.net.load_state_dict(torch.load(model_path, **kw), strict=False)
 
         elif(self.model=='net'): # pretrained network

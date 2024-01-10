@@ -182,7 +182,7 @@ class Visualizer():
         links = []
 
         for label, image_numpy in zip(names, images):
-            image_name = '%s.jpg' % (label,)
+            image_name = '%s.png' % (label,)
             save_path = os.path.join(image_dir, image_name)
             util.save_image(image_numpy, save_path)
 

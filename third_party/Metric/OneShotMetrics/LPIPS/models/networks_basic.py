@@ -13,7 +13,7 @@ from IPython import embed
 from . import pretrained_networks as pn
 
 import sys
-sys.path.append("/home/zhangss/PHDPaper/04_SinFusion/third_party/Metric/OneShotMetrics/LPIPS/")
+sys.path.append("/home/zhangss/PHDPaper/04_SinDDM/third_party/Metric/OneShotMetrics/LPIPS/")
 import models as util
 
 def spatial_average(in_tens, keepdim=True):

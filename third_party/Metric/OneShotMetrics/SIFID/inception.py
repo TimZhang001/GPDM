@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
-import torch
 
 
 class InceptionV3_sifid(nn.Module):
@@ -59,7 +58,6 @@ class InceptionV3_sifid(nn.Module):
         self.blocks = nn.ModuleList()
 
         inception = models.inception_v3(pretrained=True)
-        #inception.load_state_dict(torch.load("SIFID/sifid_inc.pth"))
 
         # Block 0: input to maxpool1
         block0 = [

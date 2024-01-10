@@ -3,35 +3,36 @@ from torchvision.transforms import ToTensor
 from .SIFID.sifid_score import calculate_sifid_given_paths
 from .FID.tests_with_FID import calculate_fid_given_paths
 from .mIoU.main import compute_miou
-from .LPIPS.models import PerceptualLoss
 
-p_model = PerceptualLoss(model='net-lin', net='alex', use_gpu=True, gpu_ids=[0])
 
-def SIFID(list_real_image, list_fake_image, sifid_all_layers):
+def SIFID(list_real_image, list_fake_image, sifid_all_layers, gpu_id):
     """
     When learning from a Single Image, compute SIFID from fake images to the real image.
     In case of multiple training images, compute FID between full fake and real sets.
     By default, compute only sifid at lowest InceptionV3 layer (sifid1)
     """
+    
+    device = torch.device('cuda:%d' % gpu_id)
+
     if len(list_real_image)==1:
-        sifid1 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, True, 64)
+        sifid1 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, device, 64)
         if not sifid_all_layers:
             return sifid1, None, None, None
-        sifid2 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, True, 192)
-        sifid3 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, True, 768)
-        sifid4 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, True, 2048)
+        sifid2 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, device, 192)
+        sifid3 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, device, 768)
+        sifid4 = calculate_sifid_given_paths(list_real_image, list_fake_image, 1, device, 2048)
         return sifid1, sifid2, sifid3, sifid4
     else:
-        sifid1 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, True, 64)
+        sifid1 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, device, 64)
         if not sifid_all_layers:
             return sifid1, None, None, None
-        sifid2 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, True, 192)
-        sifid3 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, True, 768)
-        sifid4 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, True, 2048)
+        sifid2 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, device, 192)
+        sifid3 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, device, 768)
+        sifid4 = calculate_fid_given_paths([list_real_image, list_fake_image], 10, device, 2048)
         return sifid1, sifid2, sifid3, sifid4
 
 
-def LPIPS(list_fake_image):
+def LPIPS(list_fake_image, p_model):
     """
     Compute average LPIPS between pairs of fake images
     """
@@ -48,8 +49,8 @@ def LPIPS(list_fake_image):
         for j in range(i + 1, len(lst_im))[:100]:
             dist_diversity += p_model.forward(lst_im[i], lst_im[j])
             count += 1
-            if count % 500 == 0:
-                print(count)
+            #if count % 500 == 0:
+            #    print(count)
     
 
     '''
@@ -63,7 +64,7 @@ def LPIPS(list_fake_image):
     return dist_diversity/count
 
 
-def LPIPS_to_train(list_real_image, list_fake_image, names_fake_image):
+def LPIPS_to_train(list_real_image, list_fake_image, names_fake_image, p_model):
     """
     For each fake image find the LPIPS to the closest training image
     """
@@ -90,8 +91,8 @@ def LPIPS_to_train(list_real_image, list_fake_image, names_fake_image):
         ans1  += cur_min
         count += 1
 
-        if count % 500 == 0:
-            print(count)
+        #if count % 500 == 0:
+        #    print(count)
     ans = ans1 / count
     return ans, dist_to_real_dict
 

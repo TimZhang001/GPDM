@@ -24,11 +24,11 @@ parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--path2real', type=str, help=('Path to the real images'))
 parser.add_argument('--path2fake', type=str, help=('Path to generated images'))
 parser.add_argument('-c', '--gpu', default='', type=str, help='GPU to use (leave blank for CPU only)')
-parser.add_argument('--images_suffix', default='jpg', type=str, help='image file suffix')
+parser.add_argument('--images_suffix', default='png', type=str, help='image file suffix')
 
 
 def get_activations(files, model, batch_size=1, dims=64,
-                    cuda=False, verbose=False):
+                    device="cuda:0", verbose=False):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
@@ -72,7 +72,7 @@ def get_activations(files, model, batch_size=1, dims=64,
         im = numpy.asarray(files[0]).astype(np.float32)
 
         #images = np.array([imread(str("temp/")+str(files[0])).astype(np.float32)]) #files[start:end]])
-        # image = np.asarray(imread(str("temp/")+str(files[0]))).astype(np.float32)
+        #images = np.asarray(imread(str("temp/")+str(files[0]))).astype(np.float32)
         images = np.expand_dims(im, axis=0)
 
         images = images[:, :, :, 0:3]
@@ -82,9 +82,8 @@ def get_activations(files, model, batch_size=1, dims=64,
         images /= 255
 
         batch = torch.from_numpy(images).type(torch.FloatTensor)
-        if cuda:
-            batch = batch.cuda()
-        pred = model(batch)[0]
+        batch = batch.to(device)
+        pred  = model(batch)[0]
 
         # If model output is not scalar, apply global spatial average pooling.
         # This happens if you choose a dimensionality not equal 2048.
@@ -158,7 +157,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_activation_statistics(files, model, batch_size=1,
-                                    dims=64, cuda=False, verbose=False):
+                                    dims=64, device=False, verbose=False):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
@@ -174,8 +173,8 @@ def calculate_activation_statistics(files, model, batch_size=1,
     -- mu    : The mean over samples of the activations of the inception model.
     -- sigma : The covariance matrix of the activations of the inception model.
     """
-    act = get_activations(files, model, batch_size, dims, cuda, verbose)
-    mu = np.mean(act, axis=0)
+    act   = get_activations(files, model, batch_size, dims, device, verbose)
+    mu    = np.mean(act, axis=0)
     sigma = np.cov(act, rowvar=False)
     return mu, sigma
 
@@ -194,14 +193,13 @@ def _compute_statistics_of_path(files, model, batch_size, dims, cuda):
     return m, s
 
 
-def calculate_sifid_given_paths(path1, path2, batch_size, cuda, dims):
+def calculate_sifid_given_paths(path1, path2, batch_size, device, dims):
     """Calculates the SIFID of two paths"""
 
     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
 
     model = InceptionV3([block_idx])
-    if cuda:
-        model.cuda()
+    model = model.to(device)
 
     #path1 = pathlib.Path(path1)
     #files1 = sorted(list(path1.glob('*')))
@@ -211,12 +209,10 @@ def calculate_sifid_given_paths(path1, path2, batch_size, cuda, dims):
     #files2 = sorted(list(path2.glob('*')))
     files2     = path2
     fid_values = []
-    m1, s1     = calculate_activation_statistics([files1[0]], model, batch_size, dims, cuda)
+    m1, s1     = calculate_activation_statistics([files1[0]], model, batch_size, dims, device)
     for i in range(len(files2)):
-        m2, s2 = calculate_activation_statistics([files2[i]], model, batch_size, dims, cuda)
+        m2, s2 = calculate_activation_statistics([files2[i]], model, batch_size, dims, device)
         fid_values.append(calculate_frechet_distance(m1, s1, m2, s2))
-        if i % 100 == 0:
-            print(i)
     return fid_values
 
 

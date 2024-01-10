@@ -37,7 +37,7 @@ parser.add_argument('-c', '--gpu', default='', type=str,
                     help='GPU to use (leave blank for CPU only)')
 
 def get_activations(files, model, batch_size=50, dims=2048,
-                    cuda=False, verbose=False):
+                    device=False, verbose=False):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
@@ -93,10 +93,8 @@ def get_activations(files, model, batch_size=50, dims=2048,
         #plt.imshow(np.rollaxis(batch[0].detach().cpu().numpy(), 0, 3))
         #plt.show()
 
-        if cuda:
-            batch = batch.cuda()
-
-        pred = model(batch)[0]
+        batch = batch.to(device)
+        pred  = model(batch)[0]
 
         # If model output is not scalar, apply global spatial average pooling.
         # This happens if you choose a dimensionality not equal 2048.
@@ -166,7 +164,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_activation_statistics(files, model, batch_size=50,
-                                    dims=2048, cuda=False, verbose=False):
+                                    dims=2048, device=False, verbose=False):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
@@ -184,7 +182,7 @@ def calculate_activation_statistics(files, model, batch_size=50,
     -- sigma : The covariance matrix of the activations of the pool_3 layer of
                the inception model.
     """
-    act = get_activations(files, model, batch_size, dims, cuda, verbose)
+    act = get_activations(files, model, batch_size, dims, device, verbose)
     mu = np.mean(act, axis=0)
     sigma = np.cov(act, rowvar=False)
     #print(act.shape)
@@ -193,13 +191,13 @@ def calculate_activation_statistics(files, model, batch_size=50,
     return mu, sigma
 
 
-def _compute_statistics_of_path(path, model, batch_size, dims, cuda):
-    m, s = calculate_activation_statistics(path, model, batch_size,dims, cuda)
+def _compute_statistics_of_path(path, model, batch_size, dims, device):
+    m, s = calculate_activation_statistics(path, model, batch_size,dims, device)
        
     return m, s
 
 
-def calculate_fid_given_paths(paths, batch_size, cuda, dims):
+def calculate_fid_given_paths(paths, batch_size, device, dims):
     """Calculates the FID of two paths"""
     '''
     for p in paths:
@@ -210,11 +208,10 @@ def calculate_fid_given_paths(paths, batch_size, cuda, dims):
     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
 
     model = InceptionV3([block_idx])
-    if cuda:
-        model.cuda()
+    model = model.to(device)
 
-    m1, s1 = _compute_statistics_of_path(paths[0], model, batch_size, dims, cuda)
-    m2, s2 = _compute_statistics_of_path(paths[1], model, batch_size, dims, cuda)
+    m1, s1 = _compute_statistics_of_path(paths[0], model, batch_size, dims, device)
+    m2, s2 = _compute_statistics_of_path(paths[1], model, batch_size, dims, device)
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
     return fid_value
