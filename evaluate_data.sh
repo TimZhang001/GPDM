@@ -50,3 +50,7 @@ for category in $categories; do
     echo "----------------------------------------------"
 
 done
+
+#--------------进行结果的统计和输出----------------
+root_path="/home/zhangss/PHDPaper/05_GPDM/outputs"
+python third_party/Metric/stat_evaluate_data.py --root_path "${root_path}"

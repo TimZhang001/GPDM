@@ -20,14 +20,15 @@ from OneShotMetrics.diversity.compute_diversity import compute_images_diversity_
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pyiqa
+import torch_fidelity
 
 def parser_param():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_path',        type=str,  default='/home/zhangss/PHDPaper/06_ConSinGAN/mvtecAD/zipper/squeezed_teeth')
+    parser.add_argument('--root_path',        type=str,  default='/home/zhangss/PHDPaper/05_GPDM/outputs/zipper/squeezed_teeth')
     parser.add_argument('--sifid_all_layers', type=bool, default=False)
-    parser.add_argument('--real_path',        type=str,  default="/home/zhangss/PHDPaper/06_ConSinGAN/mvtecAD/zipper/squeezed_teeth/sample_true/image")
-    parser.add_argument('--fake_path',        type=str,  default="/home/zhangss/PHDPaper/06_ConSinGAN/mvtecAD/zipper/squeezed_teeth/sample_eval/image")
+    parser.add_argument('--real_path',        type=str,  default="/home/zhangss/PHDPaper/05_GPDM/outputs/zipper/squeezed_teeth/sample_true")
+    parser.add_argument('--fake_path',        type=str,  default="/home/zhangss/PHDPaper/05_GPDM/outputs/zipper/squeezed_teeth/sample_eval")
     parser.add_argument('--gpu_id',           type=int,  default=1)
     args = parser.parse_args()
 
@@ -81,17 +82,13 @@ def write_sfid_to_file(save_fld_file, names_fake_image, sifid1, sifid2, sifid3, 
 
             plot_hist_fig(tempfid_values, save_fld_file, hist_num = 128, title_name="SIFID"+str(i))
 
-def write_fid_to_file(save_fld_file, names_fake_image, fid1, fid2, fid3, fid4):
+def write_fid_to_file(save_fld_file, names_fake_image, fid1, fid2):
     
-    for i in range(1, 4):
+    for i in range(1, 3):
         if i == 1:
             tempfid = fid1
         elif i == 2:
             tempfid = fid2
-        elif i == 3:
-            tempfid = fid3
-        elif i == 4:
-            tempfid = fid4
 
         file_name = save_fld_file+"FID"+str(i)+".csv"
       
@@ -153,7 +150,7 @@ def write_pixel_div_to_file(save_fld_file, pixel_div):
         # pixel_div values
         f.write("pixel_div values, "    + format(pixel_div.item(), ".6f") + "\n")
 
-def write_no_reference_metric(save_fld_file, niqe_list, musiq_list, names_fake_image):
+def write_no_reference_metric(save_fld_file, niqe_list, musiq_list, inception_score, names_fake_image):
     
     # write to csv file
     file_name = save_fld_file + "no_reference.csv"   
@@ -166,6 +163,10 @@ def write_no_reference_metric(save_fld_file, niqe_list, musiq_list, names_fake_i
         # musiq values
         musiq_mean = np.mean(musiq_list)
         f.write("fake musiq ave values, " + format(musiq_mean.item(), ".6f") + "\n")
+
+        # inception_score
+        is_mean    = np.mean(inception_score)
+        f.write("fake inception score ave values, " + format(is_mean.item(), ".6f") + "\n")
         
         for i in range(len(niqe_list)):
             f.write(str(names_fake_image[i * 10]) + "," + format(niqe_list[i].item(), ".6f") + "," + format(musiq_list[i].item(), ".6f") + "\n")
@@ -175,7 +176,7 @@ def plot_hist_fig(values_list, save_path, hist_num = 128, title_name=""):
     # plot histogram
     save_name = os.path.join(save_path, title_name+".png")
     fig, ax   = plt.subplots(figsize=(8, 6))
-    sns.distplot(values_list, bins=hist_num, kde=False, ax=ax)
+    sns.histplot(values_list, bins=hist_num, kde=False, ax=ax)
     ax.set_title(title_name)
     plt.tight_layout()
     plt.show()
@@ -215,33 +216,33 @@ def get_image_names_FID(args):
             continue         
         
         im_resize = im.resize(im_res, Image.Resampling.BILINEAR)
-        #save_path = im_path.replace(".png", "BILINEAR_resize.png")
-        #im_resize.save(save_path)
+        save_path = im_path.replace(".png", "BILINEAR_resize.png")
+        im_resize.save(save_path)
         list_real_image += [im_resize]
 
         im_resize = im.resize(im_res, Image.Resampling.HAMMING)
-        #save_path = im_path.replace(".png", "HAMMING_resize.png")
-        #im_resize.save(save_path)
+        save_path = im_path.replace(".png", "HAMMING_resize.png")
+        im_resize.save(save_path)
         list_real_image += [im_resize]
 
         im_resize = im.resize(im_res, Image.Resampling.BOX)
-        #save_path = im_path.replace(".png", "BOX_resize.png")
-        #im_resize.save(save_path)
+        save_path = im_path.replace(".png", "BOX_resize.png")
+        im_resize.save(save_path)
         list_real_image += [im_resize]
 
         im_resize = im.resize(im_res, Image.Resampling.LANCZOS)
-        #save_path = im_path.replace(".png", "LANCZOS_resize.png")
-        #im_resize.save(save_path)
+        save_path = im_path.replace(".png", "LANCZOS_resize.png")
+        im_resize.save(save_path)
         list_real_image += [im_resize]
 
         im_resize = im.resize(im_res, Image.Resampling.BICUBIC)
-        #save_path = im_path.replace(".png", "BICUBIC_resize.png")
-        #im_resize.save(save_path)
+        save_path = im_path.replace(".png", "BICUBIC_resize.png")
+        im_resize.save(save_path)
         list_real_image += [im_resize]
 
         im_resize = im.resize(im_res, Image.Resampling.NEAREST)
-        #save_path = im_path.replace(".png", "NEAREST_resize.png")
-        #im_resize.save(save_path)
+        save_path = im_path.replace(".png", "NEAREST_resize.png")
+        im_resize.save(save_path)
         list_real_image += [im_resize]
         
         print("real im_res: ", im.size)
@@ -281,8 +282,6 @@ def get_image_names_SFID(args):
             continue         
 
         im_resize = im.resize(im_res, Image.Resampling.BICUBIC)
-        #save_path = im_path.replace(".png", "BICUBIC_resize.png")
-        #im_resize.save(save_path)
         list_real_image += [im_resize]
         
         print("real im_res: ", im.size)
@@ -293,13 +292,11 @@ def get_image_names_SFID(args):
 def cal_no_reference_metric(list_fake_image):
     niqe_metric = pyiqa.create_metric('niqe')
     musiq_metric = pyiqa.create_metric('musiq')
-    #nima_metric = pyiqa.create_metric('nima')
     
     niqe_score_list = []
-    nima_score_list = []
     musiq_score_list = []
 
-    for index in range(0, len(list_fake_image), 10):
+    for index in range(0, len(list_fake_image), 15):
 
         fake_image = list_fake_image[index]
         
@@ -311,12 +308,10 @@ def cal_no_reference_metric(list_fake_image):
         # compute no-reference IQA
         niqe_score  = niqe_metric(fake_image)
         musiq_score = musiq_metric(fake_image)
-        #nima_score = nima_metric(fake_image)
 
         # save score
         niqe_score_list.append(niqe_score.cpu().numpy())
         musiq_score_list.append(musiq_score.cpu().numpy())
-        #nima_score_list.append(nima_score)
 
     return niqe_score_list, musiq_score_list #,nima_score_list
 
@@ -331,7 +326,7 @@ if __name__ == "__main__":
         names_real_image, names_fake_image, list_real_image, list_fake_image, im_res = get_image_names_FID(args)
 
         # 计算FID(多张图像) 值越小代表真实性越高
-        fid1, fid2, fid3, fid4 = SIFID(list_real_image, list_fake_image, args.sifid_all_layers, args.gpu_id)
+        fid1, _, _, _ = SIFID(list_real_image, list_fake_image, False, args.gpu_id)
 
         # 计算diversity，值越大代表样本多样性越高
         pixel_div = compute_images_diversity_files(list_real_image, list_fake_image)
@@ -352,6 +347,12 @@ if __name__ == "__main__":
         # 计算no-reference IQA，niqe \ musiq \ nima
         niqe_list, musiq_list          = cal_no_reference_metric(list_fake_image)
 
+        # 计算Inception score
+        metrics_dict                   = torch_fidelity.calculate_metrics(input1 = args.fake_path, input2 = args.real_path, 
+                                                                          cuda=True, batch_size=1,
+                                                                          isc=True,  verbose=True,)
+        inception_score                = metrics_dict['inception_score_mean']
+
     # --- Save the metrics under .${exp_name}/metrics --- #
     save_fld = os.path.join(args.root_path, "metrics")
     os.makedirs(save_fld, exist_ok=True)
@@ -360,14 +361,17 @@ if __name__ == "__main__":
     write_sfid_to_file(save_fld, names_fake_image, sifid1, sifid2, sifid3, sifid4)
 
     # ----------------------------------------------------------------------------
-    write_fid_to_file(save_fld, names_fake_image, fid1, fid2, fid3, fid4)
+    write_fid_to_file(save_fld, names_fake_image, fid1, None)
 
     # ----------------------------------------------------------------------------
-    write_lpips_to_file(save_fld, lpips.cpu(), dist_to_tr.cpu(), dist_to_tr_byimage, pixel_div)
+    write_lpips_to_file(save_fld, lpips.cpu(), dist_to_tr.cpu(), dist_to_tr_byimage)
+    
     write_pixel_div_to_file(save_fld, pixel_div)
 
     # ----------------------------------------------------------------------------
-    write_no_reference_metric(save_fld, niqe_list, musiq_list, names_fake_image)
+    write_no_reference_metric(save_fld, niqe_list, musiq_list, inception_score, names_fake_image)
+
+    # ----------------------------------------------------------------------------
     
     print("--- Saved metrics at %s ---" % (save_fld))
 

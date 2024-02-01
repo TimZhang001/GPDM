@@ -81,7 +81,7 @@ if __name__ == '__main__':
             outputs_dir     = join(args.output_dir, target, file_name)
             os.makedirs(outputs_dir, exist_ok=True)
 
-            iter_nums       = int(1000 / args.num_outputs) + 1
+            iter_nums       = int(500 / args.num_outputs) + 1
             for i in range(iter_nums):
                 new_images, last_lvl_references = GPDM.generate(refernce_images, criteria,
                                                                 pyramid_scales=get_pyramid_scales(fine_dim, args.coarse_dim, args.pyr_factor),
