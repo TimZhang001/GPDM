@@ -11,14 +11,13 @@ def parse_args():
     # IO
     parser = argparse.ArgumentParser(description='Run GPDM')
     
-    # 需要配置 原始图片文件夹路径
+    # 需要配置 待生成图片的路径
     parser.add_argument('--target_path', default="datasets", help="directory with images for reference patch distribution to be matched")
-    
-    # 需要配置 使用多少张图像进行生成
-    parser.add_argument('--max_inputs',  default=1, type=int, help="if target is a directory, this limits the number of images used")
+    parser.add_argument('--max_inputs',  default=3, type=int, help="if target is a directory, this limits the number of images used")
     
     # 需要配置 输出图片的路径
     parser.add_argument('--output_dir', default="outputs", help="Where to put the results")
+    parser.add_argument('--debug', action='store_true', default=False, help="Dump debug images")
     
     # 需要配置 使用哪个GPU
     parser.add_argument('--device', default="cuda:0")
@@ -32,7 +31,6 @@ def parse_args():
     parser.add_argument('--num_proj',   type=int, default=64, help="Number of random projections used to approximate SWD")
 
     # 高级参数 先不管 Pyramids parameters
-    parser.add_argument('--debug', action='store_true', default=False, help="Dump debug images")
     parser.add_argument('--fine_dim', type=int, default=None, help="Height of the largest ptramid scale (can be used to get smaller output)."
                              "If None use the target_image height")
     parser.add_argument('--coarse_dim', type=int, default=31,
@@ -44,10 +42,7 @@ def parse_args():
     parser.add_argument('--width_factor',  type=float, default=1.,   help="Controls the aspect ratio of the result: factor of width")
 
     # GPDM parameters
-    # 需要配置 zeros         --- 从0生成图像，不确定性强
-    #         target        --- 从输入的图像生成，确定性强
-    #         path-to-image --- 结合path-to-image的轮廓和target的细节信息生成
-    parser.add_argument('--init_from',   default='target', help="Defines the intial guess for the first level. Can one of ('zeros', 'target', '<path-to-image>')")
+    parser.add_argument('--init_from', default='zeros', help="Defines the intial guess for the first level. Can one of ('zeros', 'target', '<path-to-image>')")
     parser.add_argument('--lr',          type=float, default=0.01, help="Adam learning rate for the optimization")
     parser.add_argument('--num_steps',   type=int, default=300, help="Number of Adam steps")
     
@@ -67,33 +62,27 @@ if __name__ == '__main__':
     args = parse_args()
 
     # 获取文件夹下的所有文件名
-    file_names  = os.listdir(args.target_path)
-    for file_name in file_names:
+    refernce_images = read_data(args.target_path, args.max_inputs, args.gray_scale)
+    criteria        = PatchSWDLoss(patch_size=args.patch_size, stride=args.stride, num_proj=args.num_proj, c=refernce_images.shape[1])
+    fine_dim        = args.fine_dim if args.fine_dim is not None else refernce_images.shape[-2]
+    file_base_name  = basename(args.target_path).split('.')[0]
+    outputs_dir     = join(args.output_dir, "industry", file_base_name)
+    os.makedirs(outputs_dir, exist_ok=True)
 
-        args.target_image = join(args.target_path, file_name)
-        print(args.target_image)
-
-        refernce_images = read_data(args.target_image, args.max_inputs, args.gray_scale)
-        criteria        = PatchSWDLoss(patch_size=args.patch_size, stride=args.stride, num_proj=args.num_proj, c=refernce_images.shape[1])
-        fine_dim        = args.fine_dim if args.fine_dim is not None else refernce_images.shape[-2]
-        file_base_name  = basename(args.target_image).split('.')[0]
-        outputs_dir     = join(args.output_dir, "industry", file_base_name)
-        os.makedirs(outputs_dir, exist_ok=True)
-
-        iter_nums       = int(args.num_total / args.num_outputs) + 1
-        for i in range(iter_nums):
-            new_images, last_lvl_references = GPDM.generate(refernce_images, criteria,
-                                                            pyramid_scales=get_pyramid_scales(fine_dim, args.coarse_dim, args.pyr_factor),
-                                                            aspect_ratio=(args.height_factor, args.width_factor),
-                                                            init_from=args.init_from,
-                                                            lr=args.lr,
-                                                            num_steps=args.num_steps,
-                                                            additive_noise_sigma=args.noise_sigma,
-                                                            num_outputs=args.num_outputs,
-                                                            debug_dir=f"{outputs_dir}/debug" if args.debug else None,
-                                                            device=args.device)
-        
-            for j in range(len(new_images)):
-                os.makedirs(outputs_dir, exist_ok=True)
-                out_file_name = f"output_{i*args.num_outputs+j+1:06d}.png"
-                dump_images(new_images[j], outputs_dir, out_file_name)
+    iter_nums       = int(args.num_total / args.num_outputs) + 1
+    for i in range(iter_nums):
+        new_images, last_lvl_references = GPDM.generate(refernce_images, criteria,
+                                                        pyramid_scales=get_pyramid_scales(fine_dim, args.coarse_dim, args.pyr_factor),
+                                                        aspect_ratio=(args.height_factor, args.width_factor),
+                                                        init_from=args.init_from,
+                                                        lr=args.lr,
+                                                        num_steps=args.num_steps,
+                                                        additive_noise_sigma=args.noise_sigma,
+                                                        num_outputs=args.num_outputs,
+                                                        debug_dir=f"{outputs_dir}/debug" if args.debug else None,
+                                                        device=args.device)
+    
+        for j in range(len(new_images)):
+            os.makedirs(outputs_dir, exist_ok=True)
+            out_file_name = f"output_{i*args.num_outputs+j+1:06d}.png"
+            dump_images(new_images[j], outputs_dir, out_file_name)

@@ -30,14 +30,17 @@ def load_image(path, make_square=False, gray_scale=False):
 def read_data(path, max_inputs, gray_scale):
     if os.path.isdir(path):
 
-        # 使用glob获取目录下所有拖文件的路径
-        paths = glob.glob(os.path.join(path, '*.png'))
+        # 获取路径下的png tif bmp jpg文件
+        paths = glob.glob(os.path.join(path, '*.png')) + glob.glob(os.path.join(path, '*.tif')) + \
+                glob.glob(os.path.join(path, '*.bmp')) + glob.glob(os.path.join(path, '*.jpg'))
+        
+        # 如果max_inputs不为空
         if max_inputs is not None:
             if max_inputs > 1:
-                paths = paths[:max_inputs]
-            else:
-                # 选择000.png
-                paths = [os.path.join(path, '000.png')]
+                # 随机的选择max_inputs个文件
+                paths = np.random.choice(paths, max_inputs, replace=False)
+        
+        # 图片的读取
         data = []
         for p in tqdm(paths):
             data.append(load_image(p, make_square=True, gray_scale=gray_scale))
